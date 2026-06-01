@@ -1,0 +1,112 @@
+# Stage 1 — Build, test and quality gates.
+parameters:
+  - name: buildConfiguration
+    type: string
+  - name: vmImage
+    type: string
+  - name: dotnetVersion
+    type: string
+
+stages:
+  - stage: Build_Test
+    displayName: Build & Test
+    jobs:
+      - job: dotnet
+        displayName: .NET build & test
+        pool:
+          vmImage: ${{ parameters.vmImage }}
+        steps:
+          - task: UseDotNet@2
+            displayName: Install .NET SDK
+            inputs:
+              packageType: sdk
+              version: ${{ parameters.dotnetVersion }}
+
+          - task: DotNetCoreCLI@2
+            displayName: Restore
+            inputs:
+              command: restore
+              projects: '**/*.csproj'
+
+          - task: DotNetCoreCLI@2
+            displayName: Build
+            inputs:
+              command: build
+              arguments: '--configuration ${{ parameters.buildConfiguration }} --no-restore'
+              projects: '**/*.csproj'
+
+          - task: DotNetCoreCLI@2
+            displayName: Test (unit + integration)
+            inputs:
+              command: test
+              arguments: >-
+                --configuration ${{ parameters.buildConfiguration }} --no-build
+                --collect:"XPlat Code Coverage" --logger trx
+              projects: 'tests/**/*.csproj'
+
+          - task: PublishTestResults@2
+            displayName: Publish test results
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: VSTest
+              testResultsFiles: '**/*.trx'
+
+          - task: DotNetCoreCLI@2
+            displayName: Publish API
+            inputs:
+              command: publish
+              publishWebProjects: true
+              arguments: '--configuration ${{ parameters.buildConfiguration }} --output $(Build.ArtifactStagingDirectory)/api'
+              zipAfterPublish: true
+
+          - publish: $(Build.ArtifactStagingDirectory)/api
+            displayName: Upload API artifact
+            artifact: api
+
+      - job: powershell
+        displayName: PowerShell quality gates (PSScriptAnalyzer + Pester)
+        pool:
+          vmImage: ${{ parameters.vmImage }}
+        steps:
+          - task: PowerShell@2
+            displayName: Static analysis & tests
+            inputs:
+              targetType: filePath
+              filePath: scripts/Invoke-StaticAnalysis.ps1
+              pwsh: true
+
+          - task: PublishTestResults@2
+            displayName: Publish Pester results
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: NUnit
+              testResultsFiles: '**/pester-results.xml'
+
+      - job: terraform_validate
+        displayName: Terraform fmt & validate
+        pool:
+          vmImage: ${{ parameters.vmImage }}
+        steps:
+          - task: TerraformInstaller@1
+            displayName: Install Terraform
+            inputs:
+              terraformVersion: latest
+
+          - task: TerraformTaskV4@4
+            displayName: terraform init (no backend)
+            inputs:
+              provider: azurerm
+              command: init
+              workingDirectory: infra
+              commandOptions: '-backend=false'
+
+          - script: terraform fmt -check -recursive
+            displayName: terraform fmt -check
+            workingDirectory: infra
+
+          - task: TerraformTaskV4@4
+            displayName: terraform validate
+            inputs:
+              provider: azurerm
+              command: validate
+              workingDirectory: infra

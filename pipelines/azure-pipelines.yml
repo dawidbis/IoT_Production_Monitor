@@ -1,0 +1,51 @@
+# Azure DevOps multi-stage pipeline for the Factory Telemetry & OEE Monitor.
+#
+#   1. Build & Test  – restore, build, unit + integration tests, PowerShell quality gates,
+#                      Terraform fmt/validate, publish artifacts.
+#   2. Provision     – Terraform plan & apply against Azure (main branch only).
+#   3. Release       – build the container image, push to ACR, deploy to App Service.
+#
+# Service connection, ACR and remote-state details are supplied through a variable group
+# named "factory-telemetry-shared" (configured in Azure DevOps -> Library).
+
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    exclude:
+      - docs/**
+      - README.md
+
+pr:
+  branches:
+    include:
+      - main
+
+variables:
+  - group: factory-telemetry-shared
+  - name: buildConfiguration
+    value: Release
+  - name: vmImage
+    value: ubuntu-latest
+  - name: dotnetVersion
+    value: 9.0.x
+  - name: imageRepository
+    value: factorytelemetry
+
+stages:
+  - template: templates/build-test-stage.yml
+    parameters:
+      buildConfiguration: $(buildConfiguration)
+      vmImage: $(vmImage)
+      dotnetVersion: $(dotnetVersion)
+
+  - template: templates/infra-stage.yml
+    parameters:
+      vmImage: $(vmImage)
+      # azureServiceConnection / tfStateResourceGroup / tfStateStorageAccount come from the variable group.
+
+  - template: templates/deploy-stage.yml
+    parameters:
+      vmImage: $(vmImage)
+      imageRepository: $(imageRepository)

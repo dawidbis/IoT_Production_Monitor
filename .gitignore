@@ -1,0 +1,56 @@
+## ──────────────────────────────────────────────────────────────
+##  .NET / C#
+## ──────────────────────────────────────────────────────────────
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+*.user
+*.suo
+.vs/
+TestResults/
+*.trx
+coverage.cobertura.xml
+[Cc]overage*/
+
+## ──────────────────────────────────────────────────────────────
+##  Terraform
+## ──────────────────────────────────────────────────────────────
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+tfplan
+*.tfplan
+# Keep the example, ignore real variable files (may contain secrets)
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+## ──────────────────────────────────────────────────────────────
+##  PowerShell
+## ──────────────────────────────────────────────────────────────
+pester-results.xml
+*.pester.xml
+
+## ──────────────────────────────────────────────────────────────
+##  Secrets / local config
+## ──────────────────────────────────────────────────────────────
+*.env
+.env*
+appsettings.*.local.json
+secrets.json
+
+## ──────────────────────────────────────────────────────────────
+##  IDE / OS
+## ──────────────────────────────────────────────────────────────
+.idea/
+*.swp
+.DS_Store
+Thumbs.db

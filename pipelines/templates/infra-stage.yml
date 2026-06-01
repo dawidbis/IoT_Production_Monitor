@@ -1,0 +1,56 @@
+# Stage 2 — Provision Azure infrastructure with Terraform (main branch only).
+parameters:
+  - name: vmImage
+    type: string
+
+stages:
+  - stage: Provision_Infra
+    displayName: Provision Infrastructure
+    dependsOn: Build_Test
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - deployment: terraform
+        displayName: Terraform apply
+        pool:
+          vmImage: ${{ parameters.vmImage }}
+        environment: factory-telemetry-infra
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+
+                - task: TerraformInstaller@1
+                  displayName: Install Terraform
+                  inputs:
+                    terraformVersion: latest
+
+                - task: TerraformTaskV4@4
+                  displayName: terraform init (remote state)
+                  inputs:
+                    provider: azurerm
+                    command: init
+                    workingDirectory: infra
+                    backendServiceArm: $(azureServiceConnection)
+                    backendAzureRmResourceGroupName: $(tfStateResourceGroup)
+                    backendAzureRmStorageAccountName: $(tfStateStorageAccount)
+                    backendAzureRmContainerName: tfstate
+                    backendAzureRmKey: factory-telemetry-$(Build.SourceBranchName).tfstate
+
+                - task: TerraformTaskV4@4
+                  displayName: terraform plan
+                  inputs:
+                    provider: azurerm
+                    command: plan
+                    workingDirectory: infra
+                    environmentServiceNameAzureRM: $(azureServiceConnection)
+                    commandOptions: '-var="sql_admin_password=$(SQL_ADMIN_PASSWORD)" -out=$(Build.ArtifactStagingDirectory)/tfplan'
+
+                - task: TerraformTaskV4@4
+                  displayName: terraform apply
+                  inputs:
+                    provider: azurerm
+                    command: apply
+                    workingDirectory: infra
+                    environmentServiceNameAzureRM: $(azureServiceConnection)
+                    commandOptions: '$(Build.ArtifactStagingDirectory)/tfplan'

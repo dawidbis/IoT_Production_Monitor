@@ -1,0 +1,59 @@
+# Stage 3 — Build the container image, push to ACR and deploy to App Service.
+parameters:
+  - name: vmImage
+    type: string
+  - name: imageRepository
+    type: string
+
+stages:
+  - stage: Release
+    displayName: Build image & Deploy
+    dependsOn: Provision_Infra
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - job: build_push
+        displayName: Build & push image to ACR
+        pool:
+          vmImage: ${{ parameters.vmImage }}
+        steps:
+          - task: Docker@2
+            displayName: Build & push API image
+            inputs:
+              command: buildAndPush
+              repository: ${{ parameters.imageRepository }}
+              dockerfile: src/FactoryTelemetry.Api/Dockerfile
+              buildContext: src/FactoryTelemetry.Api
+              containerRegistry: $(acrServiceConnection)
+              tags: |
+                $(Build.BuildId)
+                latest
+
+      - deployment: deploy
+        displayName: Deploy to App Service
+        dependsOn: build_push
+        pool:
+          vmImage: ${{ parameters.vmImage }}
+        environment: factory-telemetry-app
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AzureWebAppContainer@1
+                  displayName: Deploy container to App Service
+                  inputs:
+                    azureSubscription: $(azureServiceConnection)
+                    appName: $(appServiceName)
+                    containers: $(acrLoginServer)/${{ parameters.imageRepository }}:$(Build.BuildId)
+
+                - task: AzureCLI@2
+                  displayName: Smoke test (/health)
+                  inputs:
+                    azureSubscription: $(azureServiceConnection)
+                    scriptType: pscore
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      $url = "https://$(appServiceName).azurewebsites.net/health"
+                      Write-Host "Probing $url"
+                      $response = Invoke-RestMethod -Uri $url -Method Get -RetryIntervalSec 10 -MaximumRetryCount 6
+                      if ($response.status -ne 'Healthy') { throw "Health check failed: $($response | ConvertTo-Json)" }
+                      Write-Host "API is healthy."

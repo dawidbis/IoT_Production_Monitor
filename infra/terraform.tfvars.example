@@ -1,0 +1,21 @@
+# Copy to terraform.tfvars and adjust. NEVER commit the real terraform.tfvars
+# (it is git-ignored) — the SQL password must come from a secret store / pipeline variable.
+
+project         = "factorytel"
+environment     = "dev"
+location        = "westeurope"
+app_service_sku = "B1"
+
+sql_admin_login = "sqladmin"
+# Provided at runtime, e.g.:  terraform apply -var="sql_admin_password=$env:SQL_ADMIN_PASSWORD"
+# sql_admin_password = "<set-via-secret>"
+
+iothub_sku      = "B1"
+iothub_capacity = 1
+
+tags = {
+  project   = "Factory Telemetry & OEE Monitor"
+  managedBy = "Terraform"
+  owner     = "DevOps"
+  costCenter = "manufacturing-it"
+}
