@@ -3,6 +3,10 @@ locals {
   name_prefix = "${var.project}-${var.environment}"
   suffix      = random_string.suffix.result
   tags        = merge(var.tags, { environment = var.environment })
+
+  # IoT Hub is not available in every region (e.g. polandcentral). Allow it to be placed
+  # in a different region than the rest of the stack; falls back to var.location.
+  iothub_location = var.iothub_location != "" ? var.iothub_location : var.location
 }
 
 # Random suffix guarantees global uniqueness for SQL Server / IoT Hub / ACR names.
@@ -75,6 +79,7 @@ resource "azurerm_linux_web_app" "api" {
     ftps_state                              = "Disabled"
     minimum_tls_version                     = "1.2"
     health_check_path                       = "/health"
+    health_check_eviction_time_in_min       = 2
 
     application_stack {
       docker_image_name   = "factorytelemetry:latest"
@@ -122,7 +127,10 @@ resource "azurerm_mssql_database" "main" {
   sku_name    = "Basic"
   max_size_gb = 2
   collation   = "SQL_Latin1_General_CP1_CI_AS"
-  tags        = local.tags
+  # Local (LRS) backup storage: cheaper, and required in regions without geo-redundant
+  # backup storage such as polandcentral.
+  storage_account_type = "Local"
+  tags                 = local.tags
 }
 
 # Permit other Azure services (incl. the App Service) to reach the SQL Server.
@@ -137,7 +145,7 @@ resource "azurerm_mssql_firewall_rule" "allow_azure" {
 resource "azurerm_iothub" "main" {
   name                = "iot-${local.name_prefix}-${local.suffix}"
   resource_group_name = azurerm_resource_group.main.name
-  location            = azurerm_resource_group.main.location
+  location            = local.iothub_location
   tags                = local.tags
 
   sku {

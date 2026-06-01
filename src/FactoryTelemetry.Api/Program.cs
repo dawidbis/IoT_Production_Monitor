@@ -57,11 +57,17 @@ try
 
     var app = builder.Build();
 
-    // Ensure the in-memory schema exists for local runs.
+    // Bootstrap the database schema on startup.
+    //  - Relational (Azure SQL): apply EF Core migrations -> creates/updates tables.
+    //  - In-memory (local dev / tests): just materialise the model.
     using (var scope = app.Services.CreateScope())
     {
         var db = scope.ServiceProvider.GetRequiredService<TelemetryDbContext>();
-        if (db.Database.IsInMemory())
+        if (db.Database.IsRelational())
+        {
+            db.Database.Migrate();
+        }
+        else
         {
             db.Database.EnsureCreated();
         }

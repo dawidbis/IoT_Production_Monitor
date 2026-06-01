@@ -56,6 +56,12 @@ variable "iothub_capacity" {
   default     = 1
 }
 
+variable "iothub_location" {
+  type        = string
+  description = "Region for the IoT Hub. Leave empty to use var.location; set explicitly when the main region lacks IoT Hub (e.g. polandcentral -> germanywestcentral)."
+  default     = ""
+}
+
 variable "tags" {
   type        = map(string)
   description = "Tags applied to every resource."
