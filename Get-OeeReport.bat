@@ -17,7 +17,7 @@ echo BaseUrl: %BASEURL%
 echo Machines: %MACHINES%
 echo.
 
-powershell -ExecutionPolicy Bypass -Command "& { $machArray = '%MACHINES%'.Split(','); .\scripts\Get-OeeReport.ps1 -BaseUrl '%BASEURL%' -Machines $machArray }"
+powershell -ExecutionPolicy Bypass -Command "& { $machArray = '%MACHINES%'.Split(','); & '%~dp0scripts\Get-OeeReport.ps1' -BaseUrl '%BASEURL%' -Machines $machArray }"
 
 echo.
 pause

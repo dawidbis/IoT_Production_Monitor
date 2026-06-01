@@ -4,6 +4,7 @@
 > (e.g. a robotic welding cell) and computes **OEE — Overall Equipment Effectiveness**,
 > the headline KPI of every manufacturing plant.
 
+[![CI](https://github.com/dawidbis/IoT_Production_Monitor/actions/workflows/ci.yml/badge.svg)](https://github.com/dawidbis/IoT_Production_Monitor/actions/workflows/ci.yml)
 ![.NET](https://img.shields.io/badge/.NET-9.0-512BD4?logo=dotnet&logoColor=white)
 ![Terraform](https://img.shields.io/badge/IaC-Terraform-7B42BC?logo=terraform&logoColor=white)
 ![Azure](https://img.shields.io/badge/Cloud-Microsoft%20Azure-0078D4?logo=microsoftazure&logoColor=white)

@@ -1,8 +1,8 @@
 @echo off
 setlocal
 
-set "DEFAULT_PATH=.\scripts"
-set "DEFAULT_TEST_PATH=.\scripts\tests"
+set "DEFAULT_PATH=%~dp0scripts"
+set "DEFAULT_TEST_PATH=%~dp0scripts\tests"
 
 echo.
 set /p SCAN_PATH="Sciezka do analizy [%DEFAULT_PATH%]: "
@@ -17,7 +17,7 @@ echo Sciezka: %SCAN_PATH%
 echo Testy:   %TEST_PATH%
 echo.
 
-powershell -ExecutionPolicy Bypass -File ".\scripts\Invoke-StaticAnalysis.ps1" ^
+powershell -ExecutionPolicy Bypass -File "%~dp0scripts\Invoke-StaticAnalysis.ps1" ^
     -Path "%SCAN_PATH%" ^
     -TestPath "%TEST_PATH%"
 
