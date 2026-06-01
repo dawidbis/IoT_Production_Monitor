@@ -35,7 +35,7 @@ Install-IfMissing -Name Pester -MinimumVersion '5.5.0'
 # --- 1. Static analysis --------------------------------------------------------
 Write-Host '== PSScriptAnalyzer ==' -ForegroundColor Cyan
 Import-Module PSScriptAnalyzer -Force
-$findings = Invoke-ScriptAnalyzer -Path $Path -Recurse -Settings $SettingsPath -Severity Warning, Error
+$findings = @(Invoke-ScriptAnalyzer -Path $Path -Recurse -Settings $SettingsPath -Severity Warning, Error)
 
 if ($findings) {
     $findings | Format-Table -AutoSize RuleName, Severity, ScriptName, Line, Message | Out-String | Write-Host

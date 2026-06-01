@@ -143,4 +143,88 @@ OEE report for $($Oee.machineId)
     }
 }
 
-Export-ModuleMember -Function New-TelemetryPayload, New-RandomTelemetryPayload, Send-Telemetry, Get-MachineOee, Format-OeeReport
+function Format-OeeLine {
+    <#
+    .SYNOPSIS
+        Render an OEE result as a single compact line (for the live monitor).
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [pscustomobject]$Oee
+    )
+    process {
+        '{0,-14} OEE {1,5:P0}   A {2,4:P0}  P {3,4:P0}  Q {4,4:P0}   prod {5}  rej {6}  n={7}' -f `
+            $Oee.machineId, $Oee.oee, $Oee.availability, $Oee.performance, $Oee.quality, `
+            $Oee.totalPartsProduced, $Oee.totalPartsRejected, $Oee.sampleCount
+    }
+}
+
+function Get-FactoryConfig {
+    <#
+    .SYNOPSIS
+        Load central configuration (Azure/local URLs, machine list) from FactoryTelemetry.config.psd1.
+    #>
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param()
+    $path = Join-Path $PSScriptRoot 'FactoryTelemetry.config.psd1'
+    if (Test-Path -Path $path) {
+        Import-PowerShellDataFile -Path $path
+    }
+    else {
+        @{
+            AzureBaseUrl  = 'http://localhost:5150'
+            LocalBaseUrl  = 'http://localhost:5150'
+            DefaultTarget = 'Local'
+            Machines      = @('WELD-CELL-07', 'PRESS-12')
+        }
+    }
+}
+
+function Test-FactoryHealth {
+    <#
+    .SYNOPSIS
+        Probe the API /health endpoint; never throws (returns a status object).
+    #>
+    [CmdletBinding()]
+    [OutputType([pscustomobject])]
+    param(
+        [Parameter(Mandatory)]
+        [string]$BaseUrl,
+
+        [ValidateRange(1, 60)]
+        [int]$TimeoutSec = 8
+    )
+    try {
+        $r = Invoke-RestMethod -Uri "$($BaseUrl.TrimEnd('/'))/health" -Method Get -TimeoutSec $TimeoutSec
+        [pscustomobject]@{ Healthy = ($r.status -eq 'Healthy'); Status = $r.status; Utc = $r.utc }
+    }
+    catch {
+        [pscustomobject]@{ Healthy = $false; Status = "ERROR: $($_.Exception.Message)"; Utc = $null }
+    }
+}
+
+function Get-RecentReading {
+    <#
+    .SYNOPSIS
+        Fetch the most recent telemetry readings for a machine.
+    #>
+    [CmdletBinding()]
+    [OutputType([pscustomobject])]
+    param(
+        [Parameter(Mandatory)]
+        [string]$BaseUrl,
+
+        [Parameter(Mandatory)]
+        [string]$MachineId,
+
+        [ValidateRange(1, 500)]
+        [int]$Take = 20
+    )
+    Invoke-RestMethod -Uri "$($BaseUrl.TrimEnd('/'))/api/telemetry/$MachineId`?take=$Take" -Method Get
+}
+
+Export-ModuleMember -Function New-TelemetryPayload, New-RandomTelemetryPayload, Send-Telemetry,
+Get-MachineOee, Format-OeeReport, Format-OeeLine, Get-FactoryConfig, Test-FactoryHealth, Get-RecentReading

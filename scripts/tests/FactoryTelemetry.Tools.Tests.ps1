@@ -69,3 +69,31 @@ Describe 'Format-OeeReport' {
         $report | Should -Match 'OEE'
     }
 }
+
+Describe 'Format-OeeLine' {
+
+    It 'renders a single compact line with machine id and OEE' {
+        $oee = [pscustomobject]@{
+            machineId = 'PRESS-12'; availability = 0.7; performance = 1.0; quality = 1.0
+            oee = 0.7; totalPartsProduced = 20; totalPartsRejected = 0; sampleCount = 12
+        }
+
+        $line = $oee | Format-OeeLine
+
+        $line | Should -Match 'PRESS-12'
+        $line | Should -Match 'OEE'
+        ($line -split "`n").Count | Should -Be 1
+    }
+}
+
+Describe 'Get-FactoryConfig' {
+
+    It 'loads the central config with the expected keys' {
+        $cfg = Get-FactoryConfig
+
+        $cfg.AzureBaseUrl  | Should -Not -BeNullOrEmpty
+        $cfg.LocalBaseUrl  | Should -Not -BeNullOrEmpty
+        $cfg.Machines      | Should -Not -BeNullOrEmpty
+        $cfg.DefaultTarget | Should -BeIn @('Azure', 'Local')
+    }
+}

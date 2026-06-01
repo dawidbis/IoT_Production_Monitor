@@ -10,7 +10,7 @@
 ![Azure](https://img.shields.io/badge/Cloud-Microsoft%20Azure-0078D4?logo=microsoftazure&logoColor=white)
 ![Azure Pipelines](https://img.shields.io/badge/CI%2FCD-Azure%20Pipelines-2560E0?logo=azuredevops&logoColor=white)
 ![PowerShell](https://img.shields.io/badge/Scripting-PowerShell-5391FE?logo=powershell&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-11%20xUnit%20%2B%206%20Pester-success)
+![Tests](https://img.shields.io/badge/tests-11%20xUnit%20%2B%208%20Pester-success)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 This is a **DevOps portfolio project**. The application is deliberately small so the
@@ -40,25 +40,36 @@ GET /api/machines/WELD-CELL-07/oee
 | **4 · Application** | C# / .NET 9 Minimal API, EF Core, Serilog, Swagger | [`src/`](src), [`tests/`](tests) |
 | **5 · Product mgmt & docs** | Markdown backlog (Azure Boards style), architecture & runbook | [`docs/`](docs) |
 
-## 🚀 Quickstart (local, zero infrastructure)
+## 🚀 Quickstart
+
+### Operator console (recommended)
+
+```powershell
+# Interactive menu: health, simulate telemetry, OEE report, live monitor, switch Azure/Local
+.\FactoryTelemetry.bat                 # or:  ./scripts/Start-FactoryConsole.ps1
+```
+
+The console targets the deployed **Azure** app by default (configured in
+[`scripts/FactoryTelemetry.config.psd1`](scripts/FactoryTelemetry.config.psd1)); switch to
+**Local** from the menu or with `-Target Local`.
+
+### Local API (zero infrastructure)
 
 ```powershell
 # 1. Run the API (uses an in-memory database automatically)
 dotnet run --project src/FactoryTelemetry.Api
-#    → Swagger UI at http://localhost:5000/swagger
+#    → Swagger UI at http://localhost:5150/swagger
 
-# 2. Stream simulated shop-floor telemetry
-./scripts/New-SampleTelemetry.ps1 -BaseUrl http://localhost:5000 -Count 30 -DelayMs 100
-
-# 3. See the OEE report
-./scripts/Get-OeeReport.ps1 -BaseUrl http://localhost:5000
+# 2. Stream telemetry + read OEE against the local instance
+./scripts/New-SampleTelemetry.ps1 -BaseUrl http://localhost:5150 -Count 30
+./scripts/Get-OeeReport.ps1        -BaseUrl http://localhost:5150
 ```
 
 ## ✅ Tests & quality gates
 
 ```powershell
 dotnet test                            # 11 tests: OEE unit tests + API integration tests
-./scripts/Invoke-StaticAnalysis.ps1    # PSScriptAnalyzer (lint) + 6 Pester tests
+./scripts/Invoke-StaticAnalysis.ps1    # PSScriptAnalyzer (lint) + 8 Pester tests
 ```
 
 Both run automatically in CI on every pull request — together with `terraform fmt -check`
