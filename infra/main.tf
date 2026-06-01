@@ -75,20 +75,20 @@ resource "azurerm_linux_web_app" "api" {
   }
 
   site_config {
-    container_registry_use_managed_identity = true
-    ftps_state                              = "Disabled"
-    minimum_tls_version                     = "1.2"
-    health_check_path                       = "/health"
-    health_check_eviction_time_in_min       = 2
+    ftps_state                        = "Disabled"
+    minimum_tls_version               = "1.2"
+    health_check_path                 = "/health"
+    health_check_eviction_time_in_min = 2
 
+    # Run the .NET app natively (zip/code deploy). The Dockerfile + container pipeline
+    # remain in the repo, but ACR Tasks (cloud image build) is disabled on Azure for
+    # Students subscriptions, so the live demo deploys code rather than a container image.
     application_stack {
-      docker_image_name   = "factorytelemetry:latest"
-      docker_registry_url = "https://${azurerm_container_registry.main.login_server}"
+      dotnet_version = "9.0"
     }
   }
 
   app_settings = {
-    "WEBSITES_PORT"                         = "8080"
     "ASPNETCORE_ENVIRONMENT"                = var.environment == "prod" ? "Production" : "Staging"
     "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.main.connection_string
     "IOTHUB_HOSTNAME"                       = azurerm_iothub.main.hostname

@@ -13,6 +13,10 @@ TestResults/
 coverage.cobertura.xml
 [Cc]overage*/
 
+# Publish / deploy artifacts
+publish/
+*.zip
+
 ## ──────────────────────────────────────────────────────────────
 ##  Terraform
 ## ──────────────────────────────────────────────────────────────
