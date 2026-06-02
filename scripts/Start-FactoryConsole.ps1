@@ -244,7 +244,9 @@ function Update-ConfigAzureUrl {
     $content = Get-Content -Path $path -Raw
     $escaped = $Url -replace '\$', '$$$$'
     $updated = $content -replace "(?m)^(\s*AzureBaseUrl\s*=\s*')[^']*(')", ('${1}' + $escaped + '${2}')
-    Set-Content -Path $path -Value $updated -Encoding UTF8
+    # Write UTF-8 *without* BOM: Set-Content -Encoding UTF8 on Windows PowerShell 5.1 prepends a
+    # BOM, which would churn the .psd1 on every save. WriteAllText keeps the file byte-clean.
+    [System.IO.File]::WriteAllText($path, $updated, (New-Object System.Text.UTF8Encoding($false)))
     Write-Host ("  Zapisano AzureBaseUrl w configu: {0}" -f $Url) -ForegroundColor DarkGray
 }
 
