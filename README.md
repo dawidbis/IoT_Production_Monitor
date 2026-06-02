@@ -133,7 +133,15 @@ group `rg-tfstate`), kept separate from the workload. You can therefore `destroy
 billable resources between demos and re-provision later **without re-bootstrapping the
 backend** — the console captures the freshly-minted URL and writes it back into
 [`scripts/FactoryTelemetry.config.psd1`](scripts/FactoryTelemetry.config.psd1).
-Requires `az login` and `terraform` on `PATH`.
+
+Run the one-shot pre-flight first (sign in + set the SQL password for the session) — also
+available from the menu as `[9] → [7]`:
+
+```powershell
+./scripts/Connect-FactoryAzure.ps1     # az login (single default subscription) + $env:SQL_ADMIN_PASSWORD
+```
+
+Requires `az` and `terraform` on `PATH`.
 
 ## 📌 Context
 

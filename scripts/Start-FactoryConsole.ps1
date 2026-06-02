@@ -375,6 +375,7 @@ function Invoke-AzureMenu {
         Write-Host '  [4] Wylacz aplikacje              (az webapp stop)'
         Write-Host '  [5] USUN wszystkie zasoby         (terraform destroy)' -ForegroundColor Yellow
         Write-Host '  [6] Pokaz stan zasobow Azure'
+        Write-Host '  [7] Zaloguj do Azure / ustaw haslo (az login)'
         Write-Host '  [0] Powrot do menu glownego'
         Write-Host ''
         $sub = Read-Host '  Wybierz opcje Azure'
@@ -387,6 +388,7 @@ function Invoke-AzureMenu {
                 '4' { Invoke-AzureWebAppPower -Action stop }
                 '5' { Invoke-AzureDestroy }
                 '6' { Show-AzureState }
+                '7' { & "$PSScriptRoot/Connect-FactoryAzure.ps1" }
                 '0' { }
                 default { Write-Host '  Nieznana opcja.' -ForegroundColor Yellow }
             }
