@@ -97,3 +97,49 @@ Describe 'Get-FactoryConfig' {
         $cfg.DefaultTarget | Should -BeIn @('Azure', 'Local')
     }
 }
+
+Describe 'Get-AppNameFromUrl' {
+
+    It 'extracts the App Service name from a full Azure URL' {
+        Get-AppNameFromUrl -Url 'https://app-factorytel-dev-hnzv6.azurewebsites.net' |
+            Should -Be 'app-factorytel-dev-hnzv6'
+    }
+
+    It 'handles a bare host without a scheme' {
+        Get-AppNameFromUrl -Url 'app-foo.azurewebsites.net' | Should -Be 'app-foo'
+    }
+
+    It 'ignores a trailing path' {
+        Get-AppNameFromUrl -Url 'https://app-bar.azurewebsites.net/swagger' | Should -Be 'app-bar'
+    }
+
+    It 'returns nothing for empty input' {
+        Get-AppNameFromUrl -Url '' | Should -BeNullOrEmpty
+    }
+}
+
+Describe 'Resolve-AzureTarget' {
+
+    It 'prefers explicit config values over the URL' {
+        $cfg = @{ AzureResourceGroup = 'rg-x'; AzureAppServiceName = 'app-x' }
+        $t = Resolve-AzureTarget -Config $cfg -BaseUrl 'https://app-y.azurewebsites.net'
+
+        $t.ResourceGroup  | Should -Be 'rg-x'
+        $t.AppServiceName | Should -Be 'app-x'
+    }
+
+    It 'falls back to the app name parsed from the URL' {
+        $cfg = @{ AzureResourceGroup = 'rg-x' }
+        $t = Resolve-AzureTarget -Config $cfg -BaseUrl 'https://app-y.azurewebsites.net'
+
+        $t.ResourceGroup  | Should -Be 'rg-x'
+        $t.AppServiceName | Should -Be 'app-y'
+    }
+
+    It 'returns a null resource group when nothing is known' {
+        $t = Resolve-AzureTarget -Config @{} -BaseUrl 'https://app-y.azurewebsites.net'
+
+        $t.ResourceGroup  | Should -BeNullOrEmpty
+        $t.AppServiceName | Should -Be 'app-y'
+    }
+}

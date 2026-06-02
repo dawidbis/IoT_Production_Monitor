@@ -10,7 +10,7 @@
 ![Azure](https://img.shields.io/badge/Cloud-Microsoft%20Azure-0078D4?logo=microsoftazure&logoColor=white)
 ![Azure Pipelines](https://img.shields.io/badge/CI%2FCD-Azure%20Pipelines-2560E0?logo=azuredevops&logoColor=white)
 ![PowerShell](https://img.shields.io/badge/Scripting-PowerShell-5391FE?logo=powershell&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-11%20xUnit%20%2B%208%20Pester-success)
+![Tests](https://img.shields.io/badge/tests-11%20xUnit%20%2B%2015%20Pester-success)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 This is a **DevOps portfolio project**. The application is deliberately small so the
@@ -53,6 +53,11 @@ The console targets the deployed **Azure** app by default (configured in
 [`scripts/FactoryTelemetry.config.psd1`](scripts/FactoryTelemetry.config.psd1)); switch to
 **Local** from the menu or with `-Target Local`.
 
+Menu option **`[9] Zarzadzanie Azure`** drives the live cloud environment end to end —
+provision the infrastructure (`terraform apply`), deploy the app, start/stop the Web App,
+or **destroy everything** (`terraform destroy`) to stop consuming Azure credits. It needs
+`az` (logged in via `az login`) and `terraform` on `PATH`.
+
 ### Local API (zero infrastructure)
 
 ```powershell
@@ -69,7 +74,7 @@ dotnet run --project src/FactoryTelemetry.Api
 
 ```powershell
 dotnet test                            # 11 tests: OEE unit tests + API integration tests
-./scripts/Invoke-StaticAnalysis.ps1    # PSScriptAnalyzer (lint) + 8 Pester tests
+./scripts/Invoke-StaticAnalysis.ps1    # PSScriptAnalyzer (lint) + 15 Pester tests
 ```
 
 Both run automatically in CI on every pull request — together with `terraform fmt -check`
@@ -110,6 +115,25 @@ The OEE maths is documented in [`docs/oee-calculation.md`](docs/oee-calculation.
 The complete flow — *Terraform provision → container build & push → App Service deploy →
 `/health` smoke test* — is defined in [`pipelines/azure-pipelines.yml`](pipelines/azure-pipelines.yml).
 For manual steps see [`infra/README.md`](infra/README.md) and [`docs/runbook.md`](docs/runbook.md).
+
+### Bring it online / tear it down (cost control)
+
+The whole Azure lifecycle is driveable from the operator console — menu option
+**`[9] Zarzadzanie Azure`** — so demos don't need any memorised commands:
+
+| Action | Console option | Under the hood |
+| --- | --- | --- |
+| Provision + deploy | `[1]` (offers `[2]` after) | `terraform apply` → `az webapp deploy` |
+| Resume the app | `[3]` | `az webapp start` |
+| Pause the app | `[4]` | `az webapp stop` *(plan still bills)* |
+| Free all credits | `[5]` | `terraform destroy` |
+
+The Terraform **remote state** lives in its own, near-free storage account (resource
+group `rg-tfstate`), kept separate from the workload. You can therefore `destroy` the
+billable resources between demos and re-provision later **without re-bootstrapping the
+backend** — the console captures the freshly-minted URL and writes it back into
+[`scripts/FactoryTelemetry.config.psd1`](scripts/FactoryTelemetry.config.psd1).
+Requires `az login` and `terraform` on `PATH`.
 
 ## 📌 Context
 

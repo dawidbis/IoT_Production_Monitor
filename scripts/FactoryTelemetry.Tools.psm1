@@ -206,6 +206,72 @@ function Test-FactoryHealth {
     }
 }
 
+function Get-AppNameFromUrl {
+    <#
+    .SYNOPSIS
+        Extract the App Service name from an Azure Web App URL (or bare host).
+    .DESCRIPTION
+        Pure helper used by the console's Azure lifecycle menu to derive the App
+        Service name (e.g. 'app-factorytel-dev-hnzv6') from its public URL when no
+        explicit name is configured. Returns $null for empty input.
+    .EXAMPLE
+        Get-AppNameFromUrl -Url 'https://app-factorytel-dev-hnzv6.azurewebsites.net'
+        # -> app-factorytel-dev-hnzv6
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [string]$Url
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Url)) { return $null }
+
+    $hostName = $Url.Trim()
+    try {
+        $uri = [Uri]$hostName
+        if ($uri.IsAbsoluteUri) { $hostName = $uri.Host }
+    }
+    catch {
+        # Not an absolute URI; treat the input itself as a host name.
+        Write-Verbose "Get-AppNameFromUrl: '$Url' is not an absolute URI."
+    }
+
+    $first = $hostName.Split('/')[0].Split('.')[0]
+    if ([string]::IsNullOrWhiteSpace($first)) { return $null }
+    $first
+}
+
+function Resolve-AzureTarget {
+    <#
+    .SYNOPSIS
+        Resolve the Azure resource group + App Service name from config and base URL.
+    .DESCRIPTION
+        Pure helper: explicit config values win; the App Service name falls back to the
+        one parsed from the base URL. Live values from `terraform output` are layered on
+        top by the console before this is consulted, so this is the offline fallback.
+    #>
+    [CmdletBinding()]
+    [OutputType([pscustomobject])]
+    param(
+        [Parameter(Mandatory)]
+        [hashtable]$Config,
+
+        [string]$BaseUrl
+    )
+
+    $rg = if ($Config.Contains('AzureResourceGroup')) { [string]$Config['AzureResourceGroup'] } else { '' }
+    $app = if ($Config.Contains('AzureAppServiceName')) { [string]$Config['AzureAppServiceName'] } else { '' }
+
+    if ([string]::IsNullOrWhiteSpace($app) -and -not [string]::IsNullOrWhiteSpace($BaseUrl)) {
+        $app = Get-AppNameFromUrl -Url $BaseUrl
+    }
+
+    [pscustomobject]@{
+        ResourceGroup  = if ([string]::IsNullOrWhiteSpace($rg)) { $null } else { $rg }
+        AppServiceName = if ([string]::IsNullOrWhiteSpace($app)) { $null } else { $app }
+    }
+}
+
 function Get-RecentReading {
     <#
     .SYNOPSIS
@@ -227,4 +293,5 @@ function Get-RecentReading {
 }
 
 Export-ModuleMember -Function New-TelemetryPayload, New-RandomTelemetryPayload, Send-Telemetry,
-Get-MachineOee, Format-OeeReport, Format-OeeLine, Get-FactoryConfig, Test-FactoryHealth, Get-RecentReading
+Get-MachineOee, Format-OeeReport, Format-OeeLine, Get-FactoryConfig, Test-FactoryHealth, Get-RecentReading,
+Get-AppNameFromUrl, Resolve-AzureTarget
