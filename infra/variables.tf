@@ -22,8 +22,8 @@ variable "environment" {
 
 variable "location" {
   type        = string
-  description = "Azure region for all resources."
-  default     = "westeurope"
+  description = "Azure region for all resources. Default is polandcentral: Azure for Students enforces a 'best available regions' policy that disallows many regions (e.g. westeurope) with a 403 RequestDisallowedByAzure."
+  default     = "polandcentral"
 }
 
 variable "app_service_sku" {
@@ -58,8 +58,8 @@ variable "iothub_capacity" {
 
 variable "iothub_location" {
   type        = string
-  description = "Region for the IoT Hub. Leave empty to use var.location; set explicitly when the main region lacks IoT Hub (e.g. polandcentral -> germanywestcentral)."
-  default     = ""
+  description = "Region for the IoT Hub. Empty falls back to var.location; set explicitly when the main region lacks IoT Hub. Default germanywestcentral because polandcentral does not offer IoT Hub."
+  default     = "germanywestcentral"
 }
 
 variable "tags" {

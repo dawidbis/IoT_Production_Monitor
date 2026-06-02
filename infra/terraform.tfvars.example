@@ -1,9 +1,15 @@
 # Copy to terraform.tfvars and adjust. NEVER commit the real terraform.tfvars
 # (it is git-ignored) — the SQL password must come from a secret store / pipeline variable.
 
-project         = "factorytel"
-environment     = "dev"
-location        = "westeurope"
+project     = "factorytel"
+environment = "dev"
+
+# Azure for Students enforces a "best available regions" policy: westeurope is
+# disallowed (403 RequestDisallowedByAzure), polandcentral is allowed. IoT Hub is
+# not offered in polandcentral, so it is placed in germanywestcentral. These are the
+# defaults in variables.tf, so you only need to override them on other subscriptions.
+location        = "polandcentral"
+iothub_location = "germanywestcentral"
 app_service_sku = "B1"
 
 sql_admin_login = "sqladmin"
